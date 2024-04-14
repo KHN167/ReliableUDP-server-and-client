@@ -27,6 +27,7 @@ def main(server_host, server_port):
             server_socket.sendto(f"Ack {SEQUENCE_NUMBER-1}".encode(), client_address)
         else:
             print("Out-of-order packet received. Discarding.")
+            server_socket.sendto(f"Ack {SEQUENCE_NUMBER-1}".encode(), client_address)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
