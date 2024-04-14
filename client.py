@@ -1,106 +1,48 @@
 import socket
-import json
-import threading
 import time
+import sys
 
-TIMEOUT = 5
-seq = 0
+TIMEOUT = 5  # Timeout value in seconds
+SEQUENCE_NUMBER = 0
 
-ack = 0
-
-class Message:
-    def __init__(self, sequence_number, data, ack=False):
-        self.sequence_number = sequence_number
-        self.data = data
-        self.ack = ack
-
-    def to_json(self):
-        return json.dumps({
-            'sequence_number': self.sequence_number,
-            'data': self.data,
-            'ack': self.ack
-        })
+def send_packet(sock, server_address, message):
+    global SEQUENCE_NUMBER
     
-
-
-
-TIMEOUT = 4  # Timeout duration in seconds
-
-def send_message(message):
-    global ack
-
-    # Start timer
-    start_time = time.monotonic()
-
-    while True:
-        # Calculate the end time based on TIMEOUT
-        end_time = start_time + TIMEOUT
-
-        # Send the message to the proxy
-        client_socket.sendto(message.encode(), (PROXY_IP, PROXY_PORT))
-        ack += 1
-
+    packet = f"{message} - Packet {SEQUENCE_NUMBER}".encode()
+    sock.sendto(packet, server_address)
+    print(f"Sent: {packet}")
+    
+    start_time = time.time()
+    while time.time() - start_time < TIMEOUT:
         try:
-            # Set a timeout for receiving the response
-            client_socket.settimeout(10)
-
-            # Receive response from server
-            response, _ = client_socket.recvfrom(1024)
-
-            print("Response from Server:", response.decode())
-
-
-
-
-            
-
-            # Reset the timeout to default
-            client_socket.settimeout(None)
-
-            return  # Exit the function after receiving the response
-
+            data, _ = sock.recvfrom(1024)
+            ack = int(data.decode().split()[1])
+            if ack == SEQUENCE_NUMBER:
+                print(f"Acknowledgment received: {ack}")
+                SEQUENCE_NUMBER += 1
+                break
         except socket.timeout:
-            # If a timeout occurs
-            client_socket.sendto(message.encode(), (PROXY_IP, PROXY_PORT))
-            print("Timeout occurred, retransmitting message:", message)
+            print("Timeout occurred. Resending packet.")
+            break
+    else:
+        print("Timeout occurred. Resending packet.")
+        send_packet(sock, server_address, message)
 
-        # Check if the current time exceeds the end time
-        if time.monotonic() >= end_time:
-            client_socket.sendto(message.encode(), (PROXY_IP, PROXY_PORT))
-            break  # Exit the outer loop if a timeout occurs without receiving a 
+def main(server_address, server_port):
+    server_address = (server_address, int(server_port))
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    client_socket.settimeout(TIMEOUT)
+    
+    while True:
+        message = input("Enter a message to send to the server (type 'exit' to quit): ")
+        if message.lower() == 'exit':
+            break
+        send_packet(client_socket, server_address, message)
 
-        
-
-
-
-
-# Define proxy IP address and port
-PROXY_IP = '127.0.0.1'
-PROXY_PORT = 5555
-
-start_time = time.time()
-
-# Create a UDP socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-
-
-
-
-
-while True:
-    message_text = input("Enter message to send ('quit' to exit): ")
-
-    if message_text.lower() == 'quit':
-        break
-
-    message = Message(seq, message_text, ack)
-
-    json_message = message.to_json()
-
-
-    send_message(json_message)
-
-    seq += 1
-
-client_socket.close()
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python client.py <server_address> <server_port>")
+    else:
+        server_address = sys.argv[1]
+        server_port = sys.argv[2]
+        main(server_address, server_port)
