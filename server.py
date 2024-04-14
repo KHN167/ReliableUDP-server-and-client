@@ -24,6 +24,7 @@ def main(server_host, server_port):
             SEQUENCE_NUMBER += 1
         elif received_sequence_number < SEQUENCE_NUMBER:
             print("Duplicate packet received. Discarding.")
+            server_socket.sendto(f"Ack {SEQUENCE_NUMBER-1}".encode(), client_address)
         else:
             print("Out-of-order packet received. Discarding.")
 
