@@ -22,8 +22,10 @@ def main(server_host, server_port):
             server_socket.sendto(f"Ack {SEQUENCE_NUMBER}".encode(), client_address)
             print(f"Sent acknowledgment: Ack {SEQUENCE_NUMBER}")
             SEQUENCE_NUMBER += 1
-        else:
+        elif received_sequence_number < SEQUENCE_NUMBER:
             print("Duplicate packet received. Discarding.")
+        else:
+            print("Out-of-order packet received. Discarding.")
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

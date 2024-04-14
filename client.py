@@ -20,13 +20,13 @@ def send_packet(sock, server_address, message):
             if ack == SEQUENCE_NUMBER:
                 print(f"Acknowledgment received: {ack}")
                 SEQUENCE_NUMBER += 1
-                break
+                return True
         except socket.timeout:
             print("Timeout occurred. Resending packet.")
             break
-    else:
-        print("Timeout occurred. Resending packet.")
-        send_packet(sock, server_address, message)
+    
+    print("Timeout occurred. Resending packet.")
+    return False
 
 def main(server_address, server_port):
     server_address = (server_address, int(server_port))
@@ -37,7 +37,10 @@ def main(server_address, server_port):
         message = input("Enter a message to send to the server (type 'exit' to quit): ")
         if message.lower() == 'exit':
             break
-        send_packet(client_socket, server_address, message)
+        
+        # Attempt to send the message until acknowledgment is received
+        while not send_packet(client_socket, server_address, message):
+            pass
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
