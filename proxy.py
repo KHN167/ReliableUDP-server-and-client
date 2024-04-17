@@ -2,6 +2,8 @@ import socket
 import sys
 import random
 import time
+import signal
+signal.signal(signal.SIGINT, signal.SIG_DFL) #added so that ctl + c closes server
 
 def proxy(proxy_host, proxy_port, server_host, server_port, client_drop_chance, server_drop_chance, client_delay_chance, server_delay_chance, client_delay_min, client_delay_max, server_delay_min, server_delay_max):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as proxy_socket:
@@ -13,7 +15,7 @@ def proxy(proxy_host, proxy_port, server_host, server_port, client_drop_chance, 
             print(f"Proxy received data from {client_address}: {data.decode()}")
 
             # Simulate packet drop from client to proxy
-            if random.random() < client_drop_chance / 100:
+            if random.random() < client_drop_chance / 100 :
                 print("Packet dropped from client to proxy.")
                 continue
 
