@@ -44,13 +44,11 @@ def main(server_host, server_port):
         if message== '':
             response = f"Word count: {word_count}, Character count (excluding spaces): {char_count}, Frequency count: {char_frequency}"
             print(response)
-            server_socket.sendto(f"Ack {SEQUENCE_NUMBER} END OF TRANSMISSION\nHERE ARE THE RESULTS:\n {response}".encode(), client_address)
-            word_count = 0
-            char_count = 0
-            char_frequency = {}
+            server_socket.sendto(f"END OF TRANSMISSION\nHERE ARE THE RESULTS:\n{response}\nAck {SEQUENCE_NUMBER}".encode(), client_address)
+            
             print(f"Sent acknowledgment: Ack {SEQUENCE_NUMBER}")
             print("End of transmission")
-            SEQUENCE_NUMBER =0
+            
         else:
             received_sequence_number = int(message.split()[-1])
             if received_sequence_number == SEQUENCE_NUMBER:
