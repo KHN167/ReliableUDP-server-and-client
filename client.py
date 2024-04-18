@@ -20,6 +20,7 @@ def send_packet(sock, server_address, message):
     packets_sent += 1
     sock.sendto(packet, server_address)
     print(f"Sent: {packet}")
+    update_graph(packets_sent, acks_received, packets_retransmitted)
     
     retries = 0
     while retries < MAX_RETRIES:
@@ -33,11 +34,13 @@ def send_packet(sock, server_address, message):
                     acks_received += 1
                     print(f"Acknowledgment received: {ack}")
                     SEQUENCE_NUMBER += 1
+                    update_graph(packets_sent, acks_received, packets_retransmitted)
                     return True
             except socket.timeout:
                 packets_retransmitted += 1
                 print("Timeout occurred. Resending packet.")
                 sock.sendto(packet, server_address)
+                update_graph(packets_sent, acks_received, packets_retransmitted)
                 print(f"Resent: {packet}")
                 break
         
@@ -54,7 +57,9 @@ def main(server_address, server_port):
     while True:
         message = input("Enter a message to send to the server (type 'exit' to quit): ")
         if message.lower() == 'exit':
+            generate_graph(packets_sent, acks_received, packets_retransmitted)
             break
+            
         
         # Attempt to send the message with retransmission until acknowledgment is received
         if not send_packet(client_socket, server_address, message):
@@ -63,18 +68,30 @@ def main(server_address, server_port):
 
     client_socket.close()
 
-    # Plotting the statistics
-    labels = ['Sent', 'Acknowledged', 'Retransmitted']
-    values = [packets_sent, acks_received, packets_retransmitted]
+  
 
-    # Creating the bar plot
-    plt.figure(figsize=(8, 6))
-    plt.bar(labels, values, color='lightgreen')
-    plt.xlabel('Packet Types')
+
+
+def generate_graph(packets_sent, acks_received, packets_retransmitted):
+    labels = ['Packets Sent', 'Acks Received', 'Packets Retransmitted']
+    values = [packets_sent, acks_received, packets_retransmitted]
+    
+    plt.bar(labels, values)
+    plt.title('Client Network Statistics')
+    plt.xlabel('Category')
     plt.ylabel('Count')
-    plt.title('Packet Statistics (Client)')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.show()
+
+def update_graph(packets_sent, acks_received, packets_retransmitted):
+    plt.clf()
+    labels = ['Packets Sent', 'Acks Received', 'Packets Retransmitted']
+    values = [packets_sent, acks_received, packets_retransmitted]
+    
+    plt.bar(labels, values)
+    plt.title('Client Network Statistics')
+    plt.xlabel('Category')
+    plt.ylabel('Count')
+    plt.pause(1) 
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

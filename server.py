@@ -84,14 +84,13 @@ def main(server_host, server_port):
     except KeyboardInterrupt:
         print("Server is shutting down...")
         server_socket.close()
-        generate_graph(packets_sent, acks_received, packets_retransmitted)
 
 def generate_graph(packets_sent, acks_received, packets_retransmitted):
     labels = ['Packets Sent', 'Acks Received', 'Packets Retransmitted']
     values = [packets_sent, acks_received, packets_retransmitted]
     
     plt.bar(labels, values)
-    plt.title('Network Statistics')
+    plt.title('Server Network Statistics')
     plt.xlabel('Category')
     plt.ylabel('Count')
     plt.show()
@@ -102,7 +101,7 @@ def update_graph(packets_sent, acks_received, packets_retransmitted):
     values = [packets_sent, acks_received, packets_retransmitted]
     
     plt.bar(labels, values)
-    plt.title('Network Statistics')
+    plt.title('Server Network Statistics')
     plt.xlabel('Category')
     plt.ylabel('Count')
     plt.pause(1) 
