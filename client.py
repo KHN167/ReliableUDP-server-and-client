@@ -1,36 +1,25 @@
-import socket
 import time
 import sys
-import signal
-signal.signal(signal.SIGINT, signal.SIG_DFL) #added so that ctl + c closes server
+import socket
+import matplotlib.pyplot as plt
 
 TIMEOUT = 5  # Timeout value in seconds
-MAX_RETRIES = 3  # Maximum number of retries
+MAX_RETRIES = 100  # Maximum number of retries
 SEQUENCE_NUMBER = 0
-
-def send_file(sock, server_address, file_path):
-    # Read and send the file in chunks
-    with open(file_path, 'rb') as file:
-        while True:
-            chunk = file.read(500)  # Read 1KB at a time
-            print(f"chunk: {chunk}")
-            if not chunk:
-                break
-            while not send_packet(sock, server_address, chunk):
-                return False
-    #Send a final empty packet as an end-of-file marker
-    send_packet(sock,server_address,'')
-    print("Done sending all data")
-    return True
+packets_sent = 0
+acks_received = 0
+packets_retransmitted = 0
 
 def send_packet(sock, server_address, message):
     global SEQUENCE_NUMBER
-    if message == '':
-        packet = ''.encode()
-    else:
-        packet = f"{message} - Packet {SEQUENCE_NUMBER}".encode()
-    sock.sendto(packet, server_address)
+    global packets_sent
+    global acks_received
+    global packets_retransmitted
     
+    packet = f"{message} - Packet {SEQUENCE_NUMBER}".encode()
+    packets_sent += 1
+    sock.sendto(packet, server_address)
+    print(f"Sent: {packet}")
     
     retries = 0
     while retries < MAX_RETRIES:
@@ -40,13 +29,12 @@ def send_packet(sock, server_address, message):
                 data, _ = sock.recvfrom(1024)
                 ack = int(data.decode().split()[1])
                 if ack == SEQUENCE_NUMBER:
+                    acks_received += 1
                     print(f"Acknowledgment received: {ack}")
-                    if message == '':
-                        SEQUENCE_NUMBER = 0
-                    else:
-                        SEQUENCE_NUMBER += 1
+                    SEQUENCE_NUMBER += 1
                     return True
             except socket.timeout:
+                packets_retransmitted += 1
                 print("Timeout occurred. Resending packet.")
                 sock.sendto(packet, server_address)
                 print(f"Resent: {packet}")
@@ -66,15 +54,26 @@ def main(server_address, server_port):
         message = input("Enter a message to send to the server (type 'exit' to quit): ")
         if message.lower() == 'exit':
             break
-        if not send_file(client_socket,server_address,message):
+        
+        # Attempt to send the message with retransmission until acknowledgment is received
+        if not send_packet(client_socket, server_address, message):
             print("Failed to send the message. Exiting.")
             break
-        # Attempt to send the message with retransmission until acknowledgment is received
-        #if not send_packet(client_socket, server_address, message):
-            #print("Failed to send the message. Exiting.")
-            #break
 
     client_socket.close()
+
+    # Plotting the statistics
+    labels = ['Sent', 'Acknowledged', 'Retransmitted']
+    values = [packets_sent, acks_received, packets_retransmitted]
+
+    # Creating the bar plot
+    plt.figure(figsize=(8, 6))
+    plt.bar(labels, values, color='lightgreen')
+    plt.xlabel('Packet Types')
+    plt.ylabel('Count')
+    plt.title('Packet Statistics (Client)')
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.show()
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
