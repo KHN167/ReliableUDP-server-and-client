@@ -5,6 +5,21 @@ import time
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL) #added so that ctl + c closes server
 
+def validate_drop_chance(chance):
+        if chance < 0.0 or chance > 100.0:
+            print("Drop chance must be between 0 and 100")
+            sys.exit(1)
+
+def validate_delay_chance(chance):
+        if chance < 0.0 or chance > 100.0:
+            print("Delay chance must be between 0 and 100")
+            sys.exit(1)
+
+def validate_delay(min_value, max_value):
+        if min_value < 0 or max_value < 0 or min_value > max_value:
+            print("Invalid delay range.Min<Max")
+            sys.exit(1)
+
 def proxy(proxy_host, proxy_port, server_host, server_port, client_drop_chance, server_drop_chance, client_delay_chance, server_delay_chance, client_delay_min, client_delay_max, server_delay_min, server_delay_max):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as proxy_socket:
         proxy_socket.bind((proxy_host, proxy_port))
@@ -62,5 +77,12 @@ if __name__ == "__main__":
     client_delay_max = int(sys.argv[10])
     server_delay_min = int(sys.argv[11])
     server_delay_max = int(sys.argv[12])
+
+    validate_drop_chance(client_drop_chance)
+    validate_drop_chance(server_drop_chance)
+    validate_delay_chance(client_delay_chance)
+    validate_delay_chance(server_delay_chance)
+    validate_delay(client_delay_min, client_delay_max)
+    validate_delay(server_delay_min, server_delay_max)
 
     proxy(proxy_host, proxy_port, server_host, server_port, client_drop_chance, server_drop_chance, client_delay_chance, server_delay_chance, client_delay_min, client_delay_max, server_delay_min, server_delay_max)

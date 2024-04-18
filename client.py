@@ -27,7 +27,8 @@ def send_packet(sock, server_address, message):
         while time.time() - start_time < TIMEOUT:
             try:
                 data, _ = sock.recvfrom(1024)
-                ack = int(data.decode().split()[1])
+                ack = int(data.decode().split()[-1])
+                response = data.decode()
                 if ack == SEQUENCE_NUMBER:
                     acks_received += 1
                     print(f"Acknowledgment received: {ack}")
